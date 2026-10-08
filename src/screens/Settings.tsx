@@ -14,6 +14,36 @@ function applyTheme(t: Theme) {
   else { document.documentElement.dataset.theme = t; localStorage.setItem('duo-theme', t); }
 }
 
+/** Kleine Layout-Diagnose: zeigt, welche Höhen iOS der App meldet. */
+function Diag() {
+  const [text, setText] = useState('');
+  useEffect(() => {
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;left:0;top:0;width:1px;visibility:hidden;pointer-events:none;box-sizing:border-box;';
+    document.body.appendChild(probe);
+    const hh = (v: string) => { probe.style.height = v; return Math.round(probe.getBoundingClientRect().height); };
+    const pad = (side: 'top' | 'bottom') => {
+      probe.style.height = '0px';
+      probe.style.padding = '0';
+      probe.style[side === 'top' ? 'paddingTop' : 'paddingBottom'] = `env(safe-area-inset-${side})`;
+      const cs = getComputedStyle(probe);
+      const v = side === 'top' ? cs.paddingTop : cs.paddingBottom;
+      probe.style.padding = '0';
+      return v;
+    };
+    const safeT = pad('top'), safeB = pad('bottom');
+    const vv = window.visualViewport;
+    const lines = [
+      `innerHeight ${window.innerHeight} · screen ${window.screen.height} · visual ${vv ? Math.round(vv.height) : '-'}`,
+      `100vh ${hh('100vh')} · 100dvh ${hh('100dvh')} · 100lvh ${hh('100lvh')} · 100svh ${hh('100svh')}`,
+      `safe oben ${safeT} · unten ${safeB} · standalone ${isStandalone() ? 'ja' : 'nein'}`,
+    ];
+    document.body.removeChild(probe);
+    setText(lines.join('\n'));
+  }, []);
+  return <p className="hint center" style={{ whiteSpace: 'pre-line', fontFamily: 'ui-monospace, monospace', fontSize: 11 }}>{text}</p>;
+}
+
 export function Settings() {
   const d = useData();
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('duo-theme') as Theme) || 'auto');
@@ -131,6 +161,7 @@ export function Settings() {
         <button className="row danger-row red" onClick={() => void supabase.auth.signOut()}>Abmelden</button>
       </div>
       <p className="hint center">Duo Home 1.1 ·{d.online ? 'online' : 'offline (gecachte Daten)'}</p>
+      <Diag />
       <div style={{ height: 30 }} />
     </div>
   );
