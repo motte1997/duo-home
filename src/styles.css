@@ -12,7 +12,9 @@
   --orange: #ff9f0a;
   --bar: rgba(249, 249, 249, 0.82);
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --safe-b: env(safe-area-inset-bottom, 0px);
+  /* Falls iOS der App weniger Höhe gibt als der Bildschirm hat (lvh > dvh), liegt die Home-Indikator-Zone
+     schon im System-Streifen unter der App. Dann wird sie hier nicht noch einmal reserviert. */
+  --safe-b: max(0px, calc(env(safe-area-inset-bottom, 0px) - (100lvh - 100dvh)));
   --safe-t: env(safe-area-inset-top, 0px);
   color-scheme: light dark;
 }
@@ -31,7 +33,7 @@
 :root[data-theme='light'] { color-scheme: light; }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body, #root { height: 100%; margin: 0; }
+html, body, #root { height: 100%; margin: 0; background: var(--bg); }
 body {
   background: var(--bg); color: var(--text);
   font: 17px/1.3 -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
@@ -76,8 +78,7 @@ h1.large { font-size: 34px; font-weight: 700; letter-spacing: 0.3px; }
 
 .tabbar {
   position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-around;
-  padding: 6px 4px calc(6px + var(--safe-b)); background: var(--bar);
-  -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  padding: 6px 4px calc(6px + var(--safe-b)); background: var(--bg);
   border-top: 0.5px solid var(--sep); z-index: 20;
 }
 .tabbar button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--text2); font-size: 10px; padding: 4px 0; }

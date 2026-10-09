@@ -14,7 +14,7 @@ export type Profile = {
 };
 
 export type Assignment = 'fixed' | 'open' | 'alternate';
-export type Recurrence = 'none' | 'daily' | 'weekly' | 'every_n_days' | 'monthly' | 'custom';
+export type Recurrence = 'none' | 'anytime' | 'daily' | 'weekly' | 'every_n_days' | 'monthly' | 'custom';
 export type IntervalUnit = 'day' | 'week' | 'month';
 export type RepeatMode = 'fixed' | 'after_completion';
 
@@ -43,7 +43,7 @@ export type Occurrence = {
   id: string;
   task_id: string;
   household_id: string;
-  due_date: string; // YYYY-MM-DD
+  due_date: string | null; // YYYY-MM-DD, null = ohne Fälligkeit
   assigned_to: string | null;
   status: 'open' | 'done' | 'skipped';
   completed_by: string | null;

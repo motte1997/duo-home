@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useData } from '../lib/store';
 import { useNav } from '../lib/nav';
-import { addDays, weekStart } from '../lib/dates';
+import { addDays, cmpDue, weekStart } from '../lib/dates';
 import { Avatar, Empty, Ring, Segmented } from '../components/ui';
 import { TaskRow } from '../components/TaskRow';
 import { totals } from '../lib/stats';
@@ -18,25 +18,26 @@ export function Today() {
     const open = d.occs
       .filter((o) => o.status === 'open')
       .filter((o) => scope === 'all' || o.assigned_to === d.user.id || o.assigned_to === null)
-      .sort((a, b) => a.due_date.localeCompare(b.due_date));
+      .sort((a, b) => cmpDue(a.due_date, b.due_date));
     const done = d.occs
       .filter((o) => o.status === 'done' && o.completed_at && o.completed_at.length > 0)
       .filter((o) => scope === 'all' || o.completed_by === d.user.id)
       .filter((o) => d.events.some((e) => e.occurrence_id === o.id && e.local_date === d.today));
     return {
-      overdue: open.filter((o) => o.due_date < d.today),
+      overdue: open.filter((o) => o.due_date !== null && o.due_date < d.today),
       today: open.filter((o) => o.due_date === d.today),
-      week: open.filter((o) => o.due_date > d.today && o.due_date <= wkEnd),
+      week: open.filter((o) => o.due_date !== null && o.due_date > d.today && o.due_date <= wkEnd),
+      anytime: open.filter((o) => o.due_date === null),
       done,
     };
   }, [d.occs, d.events, d.today, d.user.id, scope, wkEnd]);
 
   const allOpen = d.occs.filter((o) => o.status === 'open');
   const dueToday = allOpen.filter((o) => o.due_date === d.today).length;
-  const dueWeek = allOpen.filter((o) => o.due_date >= d.today && o.due_date <= wkEnd).length;
+  const dueWeek = allOpen.filter((o) => o.due_date !== null && o.due_date >= d.today && o.due_date <= wkEnd).length;
 
   const weekEvents = d.events.filter((e) => e.local_date >= wkStart && e.local_date <= wkEnd);
-  const openThisWeek = allOpen.filter((o) => o.due_date <= wkEnd).length;
+  const openThisWeek = allOpen.filter((o) => o.due_date !== null && o.due_date <= wkEnd).length;
   const progress = weekEvents.length + openThisWeek === 0 ? 0 : weekEvents.length / (weekEvents.length + openThisWeek);
 
   const people = d.members.map((m) => ({
@@ -46,7 +47,7 @@ export function Today() {
   const leader = [...people].sort((a, b) => b.total - a.total)[0];
   const grand = Math.max(1, people.reduce((a, p) => a + p.total, 0));
 
-  const empty = view.overdue.length + view.today.length + view.week.length === 0;
+  const empty = view.overdue.length + view.today.length + view.week.length + view.anytime.length === 0;
 
   return (
     <div className="page">
@@ -81,7 +82,7 @@ export function Today() {
       </div>
 
       <div className="tiles">
-        <div className="tile"><b>{allOpen.length}</b><span>Offen</span></div>
+        <div className="tile"><b>{allOpen.filter((o) => o.due_date !== null).length}</b><span>Offen</span></div>
         <div className="tile"><b>{dueToday}</b><span>Heute fällig</span></div>
         <div className="tile"><b>{dueWeek}</b><span>Diese Woche</span></div>
         <div className="tile ringtile">
@@ -112,6 +113,12 @@ export function Today() {
         <>
           <div className="section-title">Diese Woche · {view.week.length}</div>
           <div className="group">{view.week.map((o) => <TaskRow key={o.id} occ={o} />)}</div>
+        </>
+      )}
+      {view.anytime.length > 0 && (
+        <>
+          <div className="section-title">Jederzeit · {view.anytime.length}</div>
+          <div className="group">{view.anytime.map((o) => <TaskRow key={o.id} occ={o} />)}</div>
         </>
       )}
       {view.done.length > 0 && (

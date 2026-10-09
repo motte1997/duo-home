@@ -4,6 +4,7 @@ import { useNav } from '../lib/nav';
 import type { Assignment, IntervalUnit, Recurrence, RepeatMode, TaskDraft } from '../lib/types';
 import { RECURRENCE_OPTIONS, WEEKDAYS } from '../lib/recurrence';
 import { Segmented, Sheet, Stepper } from '../components/ui';
+import { cmpDue } from '../lib/dates';
 
 type Who = 'me' | 'partner' | 'open' | 'alternate';
 
@@ -12,7 +13,7 @@ export function TaskForm({ taskId }: { taskId?: string }) {
   const nav = useNav();
   const task = taskId ? d.taskById[taskId] : undefined;
   const occ = task
-    ? d.occs.filter((o) => o.task_id === task.id && o.status === 'open').sort((a, b) => a.due_date.localeCompare(b.due_date))[0]
+    ? d.occs.filter((o) => o.task_id === task.id && o.status === 'open').sort((a, b) => cmpDue(a.due_date, b.due_date))[0]
     : undefined;
   const partnerId = d.partner?.id ?? null;
 
@@ -27,7 +28,7 @@ export function TaskForm({ taskId }: { taskId?: string }) {
   const [who, setWho] = useState<Who>(initialWho);
   const [altStart, setAltStart] = useState<'me' | 'partner'>(
     task?.assignment === 'alternate' && task.assignee === partnerId ? 'partner' : 'me');
-  const [due, setDue] = useState(occ?.due_date ?? task?.start_date ?? d.today);
+  const [due, setDue] = useState(occ?.due_date ?? d.today);
   const [rec, setRec] = useState<Recurrence>(task?.recurrence ?? 'none');
   const [n, setN] = useState(task?.interval_n ?? 1);
   const [unit, setUnit] = useState<IntervalUnit>(task?.interval_unit ?? 'week');
@@ -35,7 +36,7 @@ export function TaskForm({ taskId }: { taskId?: string }) {
   const [mday, setMday] = useState<number | null>(task?.month_day ?? null);
   const [mode, setMode] = useState<RepeatMode>(task?.repeat_mode ?? 'fixed');
   const [end, setEnd] = useState(task?.end_date ?? '');
-  const [rem, setRem] = useState((task?.reminder_time ?? '08:00').slice(0, 5));
+  const rem = (task?.reminder_time ?? '08:00').slice(0, 5); // Erinnerungen kommen standardmäßig um 08:00
   const [saving, setSaving] = useState(false);
 
   const showN = rec === 'every_n_days' || rec === 'weekly' || rec === 'monthly' || rec === 'custom';
@@ -43,6 +44,8 @@ export function TaskForm({ taskId }: { taskId?: string }) {
     : rec === 'monthly' ? 'Alle … Monate' : 'Alle …';
   const showWeekdays = rec === 'weekly' || (rec === 'custom' && unit === 'week');
   const showMonthDay = rec === 'monthly' || (rec === 'custom' && unit === 'month');
+  const noDue = rec === 'anytime';
+  const repeats = rec !== 'none' && rec !== 'anytime';
   const disableWho = !partnerId;
 
   const toggleWd = (i: number) => setWds((w) => (w.includes(i) ? w.filter((x) => x !== i) : [...w, i].sort()));
@@ -60,11 +63,11 @@ export function TaskForm({ taskId }: { taskId?: string }) {
       recurrence: rec, interval_n: showN ? Math.max(1, n) : 1,
       interval_unit: rec === 'custom' ? unit : 'day',
       weekdays: showWeekdays ? wds : [], month_day: showMonthDay ? mday : null,
-      repeat_mode: rec === 'none' ? 'fixed' : mode,
-      start_date: task ? task.start_date : due, end_date: end || null,
+      repeat_mode: repeats ? mode : 'fixed',
+      start_date: task ? task.start_date : due, end_date: repeats && end ? end : null,
       reminder_time: rem || '08:00',
     };
-    const ok = await d.saveTask(draft, task ? { task, occ, dueDate: due } : undefined);
+    const ok = await d.saveTask(draft, task ? { task, occ, dueDate: noDue ? null : due } : undefined);
     setSaving(false);
     if (ok) nav.closeForm();
   };
@@ -90,7 +93,7 @@ export function TaskForm({ taskId }: { taskId?: string }) {
         <div className="row"><span className="grow">Punkte</span><Stepper value={points} onChange={setPoints} min={0} max={100} /></div>
         <div className="row">
           <div className="chips tight">
-            {[1, 3, 5, 10, 20].map((p) => (
+            {[1, 2, 3, 4, 5].map((p) => (
               <button key={p} className={'chip' + (p === points ? ' on' : '')} onClick={() => setPoints(p)}>{p}</button>
             ))}
           </div>
@@ -115,14 +118,14 @@ export function TaskForm({ taskId }: { taskId?: string }) {
 
       <div className="section-title">Termin</div>
       <div className="group">
-        <label className="row"><span className="grow">{task ? 'Nächste Fälligkeit' : 'Fällig am'}</span>
-          <input type="date" value={due} onChange={(e) => setDue(e.target.value)} required /></label>
-        <label className="row"><span className="grow">Erinnerung um</span>
-          <input type="time" value={rem} onChange={(e) => setRem(e.target.value)} /></label>
         <label className="row"><span className="grow">Wiederholung</span>
           <select value={rec} onChange={(e) => setRec(e.target.value as Recurrence)}>
             {RECURRENCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select></label>
+        {!noDue && (
+          <label className="row"><span className="grow">{task ? 'Nächste Fälligkeit' : 'Fällig am'}</span>
+            <input type="date" value={due} onChange={(e) => setDue(e.target.value)} required /></label>
+        )}
         {rec === 'custom' && (
           <label className="row"><span className="grow">Einheit</span>
             <select value={unit} onChange={(e) => setUnit(e.target.value as IntervalUnit)}>
@@ -144,7 +147,7 @@ export function TaskForm({ taskId }: { taskId?: string }) {
             ))}
           </div></div>
         )}
-        {rec !== 'none' && (
+        {repeats && (
           <>
             <div className="row"><span className="grow">Nächster Termin</span>
               <Segmented<RepeatMode> value={mode} onChange={setMode}
@@ -154,7 +157,13 @@ export function TaskForm({ taskId }: { taskId?: string }) {
           </>
         )}
       </div>
-      {rec !== 'none' && (
+      {noDue && (
+        <p className="hint">
+          Die Aufgabe hat kein Fälligkeitsdatum und bleibt immer offen. Nach dem Abhaken bekommst du die Punkte,
+          und sie steht sofort wieder bereit – ideal für Spülen, Wäsche aufhängen & Co.
+        </p>
+      )}
+      {repeats && (
         <p className="hint">
           {mode === 'fixed'
             ? 'Fester Takt: Der nächste Termin richtet sich nach dem Kalender – egal, wann du erledigst.'

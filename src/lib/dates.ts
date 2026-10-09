@@ -77,6 +77,11 @@ export function dueLabel(due: string, today: string): string {
   return shortDate(due);
 }
 
+/** Sortierung nach Fälligkeit; Aufgaben ohne Fälligkeit kommen ans Ende. */
+export function cmpDue(a: string | null, b: string | null): number {
+  return (a ?? '9999-12-31').localeCompare(b ?? '9999-12-31');
+}
+
 export function timeHM(t: string): string {
   return t.slice(0, 5);
 }

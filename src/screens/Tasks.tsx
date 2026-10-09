@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useData } from '../lib/store';
 import { useNav } from '../lib/nav';
-import { addDays, dueLabel, weekStart } from '../lib/dates';
+import { addDays, cmpDue, dueLabel, weekStart } from '../lib/dates';
 import { describeRecurrence } from '../lib/recurrence';
 import { Avatar, Empty, Icon, Segmented } from '../components/ui';
 import { TaskRow } from '../components/TaskRow';
@@ -19,12 +19,13 @@ export function Tasks() {
   const open = useMemo(() => {
     const wkEnd = addDays(weekStart(d.today), 6);
     const list = d.occs.filter((o) => o.status === 'open' && match(d.taskById[o.task_id]?.title ?? ''))
-      .sort((a, b) => a.due_date.localeCompare(b.due_date));
+      .sort((a, b) => cmpDue(a.due_date, b.due_date));
     return [
-      { label: 'Überfällig', late: true, items: list.filter((o) => o.due_date < d.today) },
+      { label: 'Überfällig', late: true, items: list.filter((o) => o.due_date !== null && o.due_date < d.today) },
       { label: 'Heute', items: list.filter((o) => o.due_date === d.today) },
-      { label: 'Diese Woche', items: list.filter((o) => o.due_date > d.today && o.due_date <= wkEnd) },
-      { label: 'Später', items: list.filter((o) => o.due_date > wkEnd) },
+      { label: 'Diese Woche', items: list.filter((o) => o.due_date !== null && o.due_date > d.today && o.due_date <= wkEnd) },
+      { label: 'Später', items: list.filter((o) => o.due_date !== null && o.due_date > wkEnd) },
+      { label: 'Ohne Fälligkeit', items: list.filter((o) => o.due_date === null) },
     ].filter((g) => g.items.length);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [d.occs, d.taskById, d.today, q]);
@@ -38,7 +39,7 @@ export function Tasks() {
     .sort((a, b) => (b.completed_at ?? '').localeCompare(a.completed_at ?? ''));
 
   const nextOcc = (taskId: string) =>
-    d.occs.filter((o) => o.task_id === taskId && o.status === 'open').sort((a, b) => a.due_date.localeCompare(b.due_date))[0];
+    d.occs.filter((o) => o.task_id === taskId && o.status === 'open').sort((a, b) => cmpDue(a.due_date, b.due_date))[0];
 
   return (
     <div className="page">
@@ -72,7 +73,7 @@ export function Tasks() {
                 <Avatar p={who} size={30} />
                 <div className="grow">
                   <div className="title">{t.title}</div>
-                  <div className="sub">{describeRecurrence(t)}{occ ? ` · nächste: ${dueLabel(occ.due_date, d.today)}` : ''}</div>
+                  <div className="sub">{describeRecurrence(t)}{occ && occ.due_date ? ` · nächste: ${dueLabel(occ.due_date, d.today)}` : ''}</div>
                 </div>
                 <span className="pill">+{t.points}</span>
                 <span className="chev"><Icon.chevron /></span>

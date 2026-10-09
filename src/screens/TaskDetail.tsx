@@ -44,9 +44,11 @@ export function TaskDetail({ occId }: { occId: string }) {
         <div className="row"><span className="grow">Zuständig</span>
           {assignee ? <><Avatar p={assignee} size={22} />&nbsp;{assignee.display_name}</> : <span className="muted">Offen – wer zuerst</span>}</div>
         <div className="row"><span className="grow">Fällig</span>
-          <span className={!done && occ.due_date < d.today ? 'late' : ''}>{dueLabel(occ.due_date, d.today)} · {shortDate(occ.due_date)}</span></div>
+          {occ.due_date === null
+            ? <span className="muted">Ohne Fälligkeit</span>
+            : <span className={!done && occ.due_date < d.today ? 'late' : ''}>{dueLabel(occ.due_date, d.today)} · {shortDate(occ.due_date)}</span>}</div>
         <div className="row"><span className="grow">Wiederholung</span><span>{describeRecurrence(task)}</span></div>
-        {task.recurrence !== 'none' && (
+        {task.recurrence !== 'none' && task.recurrence !== 'anytime' && (
           <div className="row"><span className="grow">Modus</span>
             <span>{task.repeat_mode === 'fixed' ? 'Fester Takt' : 'Ab Erledigung'}</span></div>
         )}
@@ -62,19 +64,23 @@ export function TaskDetail({ occId }: { occId: string }) {
           <button className="btn primary block" onClick={() => { void d.complete(occ); nav.closePage(); }}>
             Erledigt (+{task.points})
           </button>
-          <div className="section-title">Verschieben</div>
-          <div className="chips">
-            {[['Morgen', 1], ['In 3 Tagen', 3], ['Nächste Woche', 7]].map(([l, n]) => (
-              <button key={l as string} className="chip"
-                onClick={() => void d.postpone(occ, addDays(occ.due_date < d.today ? d.today : occ.due_date, n as number))}>{l}</button>
-            ))}
-          </div>
-          <div className="group" style={{ marginTop: 10 }}>
-            <label className="row"><span className="grow">Eigenes Datum</span>
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-              <button className="link bold" disabled={!date} onClick={() => void d.postpone(occ, date)}>OK</button></label>
-          </div>
-          {task.recurrence !== 'none' && (
+          {occ.due_date !== null && (
+            <>
+              <div className="section-title">Verschieben</div>
+              <div className="chips">
+                {[['Morgen', 1], ['In 3 Tagen', 3], ['Nächste Woche', 7]].map(([l, n]) => (
+                  <button key={l as string} className="chip"
+                    onClick={() => void d.postpone(occ, addDays(occ.due_date! < d.today ? d.today : occ.due_date!, n as number))}>{l}</button>
+                ))}
+              </div>
+              <div className="group" style={{ marginTop: 10 }}>
+                <label className="row"><span className="grow">Eigenes Datum</span>
+                  <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                  <button className="link bold" disabled={!date} onClick={() => void d.postpone(occ, date)}>OK</button></label>
+              </div>
+            </>
+          )}
+          {task.recurrence !== 'none' && task.recurrence !== 'anytime' && (
             <div className="group" style={{ marginTop: 16 }}>
               <button className="row danger-row" onClick={() => { void d.skip(occ); nav.closePage(); }}>
                 Diesmal überspringen
