@@ -130,7 +130,7 @@ export function Settings() {
       <div className="group" style={{ marginTop: 24 }}>
         <button className="row danger-row red" onClick={() => void supabase.auth.signOut()}>Abmelden</button>
       </div>
-      <p className="hint center">Duo Home 1.6 · {d.online ? 'online' : 'offline (gecachte Daten)'}</p>
+      <p className="hint center">Duo Home 1.7 · {d.online ? 'online' : 'offline (gecachte Daten)'}</p>
       <div style={{ height: 30 }} />
     </div>
   );

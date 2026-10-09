@@ -84,13 +84,13 @@ export function TaskForm({ taskId }: { taskId?: string }) {
     <Sheet title={task ? 'Aufgabe bearbeiten' : 'Neue Aufgabe'} onClose={nav.closeForm} onSave={save} saving={saving}
       saveLabel={task ? 'Sichern' : 'Hinzufügen'}>
       <div className="group">
-        <label className="row"><input className="big" autoFocus={!task} value={title} placeholder="Titel (z. B. Bad putzen)"
+        <label className="row"><input className="big" value={title} placeholder="Titel (z. B. Bad putzen)"
           onChange={(e) => setTitle(e.target.value)} maxLength={80} /></label>
         <label className="row"><input value={notes} placeholder="Notiz (optional)" onChange={(e) => setNotes(e.target.value)} maxLength={300} /></label>
       </div>
 
       <div className="group">
-        <div className="row"><span className="grow">Punkte</span><Stepper value={points} onChange={setPoints} min={0} max={100} /></div>
+        <div className="row"><span className="grow nowrap">Punkte</span><Stepper value={points} onChange={setPoints} min={0} max={100} /></div>
         <div className="row">
           <div className="chips tight">
             {[1, 2, 3, 4, 5].map((p) => (
@@ -109,7 +109,7 @@ export function TaskForm({ taskId }: { taskId?: string }) {
         ]} />
       {who === 'alternate' && (
         <div className="group" style={{ marginTop: 10 }}>
-          <div className="row"><span className="grow">Startet bei</span>
+          <div className="row"><span className="grow nowrap">Startet bei</span>
             <Segmented<'me' | 'partner'> value={altStart} onChange={setAltStart}
               options={[{ value: 'me', label: me?.display_name.slice(0, 8) || 'Ich' }, { value: 'partner', label: pt?.display_name.slice(0, 8) || 'Partner' }]} /></div>
         </div>
@@ -118,23 +118,23 @@ export function TaskForm({ taskId }: { taskId?: string }) {
 
       <div className="section-title">Termin</div>
       <div className="group">
-        <label className="row"><span className="grow">Wiederholung</span>
+        <label className="row"><span className="grow nowrap">Wiederholung</span>
           <select value={rec} onChange={(e) => setRec(e.target.value as Recurrence)}>
             {RECURRENCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select></label>
         {!noDue && (
-          <label className="row"><span className="grow">{task ? 'Nächste Fälligkeit' : 'Fällig am'}</span>
+          <label className="row"><span className="grow nowrap">{task ? 'Nächste Fälligkeit' : 'Fällig am'}</span>
             <input type="date" value={due} onChange={(e) => setDue(e.target.value)} required /></label>
         )}
         {rec === 'custom' && (
-          <label className="row"><span className="grow">Einheit</span>
+          <label className="row"><span className="grow nowrap">Einheit</span>
             <select value={unit} onChange={(e) => setUnit(e.target.value as IntervalUnit)}>
               <option value="day">Tage</option><option value="week">Wochen</option><option value="month">Monate</option>
             </select></label>
         )}
-        {showN && <div className="row"><span className="grow">{nLabel}</span><Stepper value={n} onChange={setN} min={1} max={365} /></div>}
+        {showN && <div className="row"><span className="grow nowrap">{nLabel}</span><Stepper value={n} onChange={setN} min={1} max={365} /></div>}
         {showMonthDay && (
-          <label className="row"><span className="grow">Tag im Monat</span>
+          <label className="row"><span className="grow nowrap">Tag im Monat</span>
             <select value={mday ?? ''} onChange={(e) => setMday(e.target.value ? Number(e.target.value) : null)}>
               <option value="">wie Fälligkeit</option>
               {Array.from({ length: 31 }, (_, i) => i + 1).map((x) => <option key={x} value={x}>{x}.</option>)}
@@ -149,10 +149,10 @@ export function TaskForm({ taskId }: { taskId?: string }) {
         )}
         {repeats && (
           <>
-            <div className="row"><span className="grow">Nächster Termin</span>
+            <div className="row"><span className="grow nowrap">Nächster Termin</span>
               <Segmented<RepeatMode> value={mode} onChange={setMode}
                 options={[{ value: 'fixed', label: 'Fester Takt' }, { value: 'after_completion', label: 'Ab Erledigung' }]} /></div>
-            <label className="row"><span className="grow">Enddatum</span>
+            <label className="row"><span className="grow nowrap">Enddatum</span>
               <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></label>
           </>
         )}

@@ -1,4 +1,4 @@
-import { useEffect, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Profile } from '../lib/types';
 import { useData } from '../lib/store';
 
@@ -91,8 +91,23 @@ export function Sheet({ title, onClose, onSave, saveLabel = 'Sichern', saving, c
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = prev; };
   }, []);
+
+  // Sichtbaren Bereich verfolgen: Bei geöffneter Tastatur schrumpft das Sheet,
+  // sodass alle Felder darüber erreichbar (scrollbar) bleiben.
+  const [vp, setVp] = useState<{ top: number; height: number } | null>(null);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => setVp({ top: vv.offsetTop, height: vv.height });
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => { vv.removeEventListener('resize', update); vv.removeEventListener('scroll', update); };
+  }, []);
+
   return (
-    <div className="sheet-backdrop" onClick={onClose}>
+    <div className="sheet-backdrop" onClick={onClose}
+      style={vp ? { top: vp.top, bottom: 'auto', height: vp.height } : undefined}>
       <div className="sheet" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
         <div className="sheet-grab" />
         <div className="sheet-head">

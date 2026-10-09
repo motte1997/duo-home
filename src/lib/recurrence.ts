@@ -39,7 +39,7 @@ export function describeRecurrence(t: R): string {
 
 export const RECURRENCE_OPTIONS: { value: Task['recurrence']; label: string }[] = [
   { value: 'none', label: 'Einmalig' },
-  { value: 'anytime', label: 'Ohne Fälligkeit (immer wieder)' },
+  { value: 'anytime', label: 'Ohne Fälligkeit' },
   { value: 'daily', label: 'Täglich' },
   { value: 'weekly', label: 'Wöchentlich' },
   { value: 'every_n_days', label: 'Alle X Tage' },
